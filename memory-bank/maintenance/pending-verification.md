@@ -20,6 +20,8 @@ related:
 ## Summary
 
 - Runtime Kafka and connector behavior was not exercised during foundation analysis.
+- The Simple Kafka Connector 1C `1.9.2+` release change was accepted with
+  runtime 1C/Kafka checks waived.
 - Compatibility with every update in the Conversion Data `3.1+` line is not
   proven.
 - Example extension metadata and documented platform baselines differ.
@@ -31,7 +33,7 @@ related:
 
 | Area | Evidence | Required follow-up |
 |---|---|---|
-| Connector/runtime | Source and docs only | Run end-to-end send/read against supported Kafka/connector versions |
+| Connector/runtime | `SPEC-0002` and commit `84dd8f3` verify the `1.9.2+` source, bundle, and docs; runtime was waived | Run validation, atomicity, diagnostics, and end-to-end send/read against supported Kafka/connector versions |
 | KFK compatibility | Targets `КД 3.1+`; exact patch is intentionally not stored | Test each claimed supported Conversion Data release |
 | Examples version | Platform `8.5.1`, extension `8.3.21`, README `8.3.21+` | Define and align intended baseline |
 | KFK diagnostics | 2 major, 18 minor | Review each marker; document accepted exceptions |

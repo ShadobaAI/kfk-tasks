@@ -24,6 +24,7 @@ related:
 ## Summary
 
 - Apache Kafka is reached only through Simple Kafka Connector 1C.
+- The adapter release baseline for Simple Kafka Connector 1C is `1.9.2+`.
 - Application payload transformation is either custom BSL or Conversion Data 3.1.
 - XDTO is the contract mechanism for Conversion Data paths.
 - External operational logging supports ELK/OpenSearch-style HTTP ingestion.
@@ -34,8 +35,9 @@ related:
 
 `DataProcessor.кфкИнтеграция` owns connector creation, producer/consumer
 sessions, direct send/read, and Kafka transaction operations. Connector and
-librdkafka versions are external compatibility surfaces; verify release
-requirements before upgrading.
+librdkafka versions are external compatibility surfaces. `SPEC-0002` upgraded
+the embedded connector baseline to `1.9.2+`; runtime behavior was waived for
+that release and remains pending verification.
 
 ## Host-application boundary
 
@@ -61,7 +63,7 @@ that line must be verified by the conversion extension's tests.
 
 | Boundary | Purpose | Evidence status |
 |---|---|---|
-| Kafka cluster | Message transport | Verified in source/docs; runtime not exercised here |
+| Kafka cluster | Message transport | Connector `1.9.2+` verified in source/bundle/docs; runtime not exercised here |
 | ELK / OpenSearch | External history logs | Documented and tooling present |
 | Telegram | Threshold alerts | Documented; credentials/runtime not inspected |
 | SonarQube | Static BSL analysis | Tooling present |

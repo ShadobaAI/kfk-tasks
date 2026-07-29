@@ -9,6 +9,7 @@ sources:
 related:
   - template.md
   - spec-0001-memory-bank-foundation.md
+  - spec-0002-simple-kafka-adapter-1-9-2.md
   - ../decisions/README.md
 ---
 
@@ -56,9 +57,9 @@ any non-terminal -> superseded
 | ID | Specification | Status |
 |---|---|---|
 | [SPEC-0001](spec-0001-memory-bank-foundation.md) | Memory Bank and SDD foundation | implemented |
+| [SPEC-0002](spec-0002-simple-kafka-adapter-1-9-2.md) | Upgrade Simple-Kafka_Adapter to 1.9.2+ | verified |
 
 ## Creation
 
 Copy [the template](template.md) or call `create_specification` through the
 Memory Bank MCP.
-

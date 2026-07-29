@@ -31,6 +31,7 @@ related:
 - It is an EDT extension project named `АдаптерKafka`.
 - It contains product metadata/BSL, MkDocs, and release/quality configuration.
 - Compatibility metadata is `8.3.21`; the extension purpose is customization.
+- The embedded Simple Kafka Connector 1C compatibility baseline is `1.9.2+`.
 - The `кфк` prefix identifies adapter-owned metadata.
 - Two common modules form the documented application API.
 - Current EDT inspection found no project problems.
@@ -64,7 +65,7 @@ treat similarly named data-processor methods as the public application facade.
 ## Dependencies
 
 - Host 1C configuration, normally with BSP infrastructure.
-- Simple Kafka Connector 1C and librdkafka for transport.
+- Simple Kafka Connector 1C `1.9.2+` and its bundled librdkafka for transport.
 - Apache Kafka at runtime.
 - Optional custom application handlers or Conversion Data/XDTO artifacts.
 
