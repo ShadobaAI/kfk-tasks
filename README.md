@@ -1,16 +1,20 @@
-# Kafka Adapter — Memory Bank и SDD
+# Kafka Adapter — задачи, Memory Bank и SDD
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
 ![MCP](https://img.shields.io/badge/MCP-stdio-blue)
 ![Хранилище](https://img.shields.io/badge/Хранилище-Markdown-green)
+[![Issues](https://img.shields.io/github/issues/ShadobaAI/kfk-tasks)](https://github.com/ShadobaAI/kfk-tasks/issues)
 
-Проектная база знаний, Specification-Driven Development и локальный MCP-сервер
-для экосистемы [1С: Адаптер Kafka](https://github.com/ShadobaAI/kafka-adapter).
+Задачи, проектная база знаний, Specification-Driven Development и локальный
+MCP-сервер для экосистемы
+[1С: Адаптер Kafka](https://github.com/ShadobaAI/kafka-adapter).
 
 ## Назначение
 
 Репозиторий содержит инструменты и документацию для сопровождения проекта:
 
+- **GitHub Issues** — постановка, обсуждение и контроль проектных задач;
+- **GitHub Projects** — визуальное представление текущего хода работ;
 - **Memory Bank** — архитектура, карта репозиториев, компоненты, публичный API,
   потоки данных и правила разработки;
 - **SDD и ADR** — спецификации изменений и архитектурные решения;
@@ -20,6 +24,25 @@
   базы знаний.
 
 Начальная точка навигации — [Memory Bank](memory-bank/README.md).
+
+## Issues и управление работами
+
+Задачи проекта создаются в
+[GitHub Issues](https://github.com/ShadobaAI/kfk-tasks/issues), а их состояние
+отслеживается на
+[доске GitHub Projects](https://github.com/users/ShadobaAI/projects/3/views/1).
+
+Перед созданием Issue проверь существующие задачи. В описании укажи:
+
+- затронутые репозитории и компоненты;
+- текущее и ожидаемое поведение;
+- шаги воспроизведения для ошибки либо ожидаемый результат для изменения;
+- ограничения совместимости и критерии приёмки;
+- связанные спецификации, ADR, pull requests и commits при их наличии.
+
+Issue используется для обсуждения и контроля работы. Устойчивые требования
+значимого изменения фиксируются в SDD-спецификации, а архитектурные решения —
+в ADR. Идентификаторы `SPEC-NNNN` и `ADR-NNNN` не зависят от номера Issue.
 
 ## Быстрый старт
 
