@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kafka-adapter-memory-bank"
+version = "0.1.0"
+description = "Local Markdown Memory Bank and MCP server for kafka-adapter"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "PyYAML>=6.0"
+]
+
+[project.scripts]
+memory-bank = "memory_bank_mcp.cli:main"
+memory-bank-mcp = "memory_bank_mcp.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
