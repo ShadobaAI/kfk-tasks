@@ -47,13 +47,13 @@ def tool_definitions() -> list[dict[str, Any]]:
         {"name": "get_specification", "description": "Retrieve a specification by stable id.", "inputSchema": schema({"id": string, "max_chars": integer}, ["id"])},
         {"name": "get_task_context", "description": "Build a compact deduplicated task-context bundle.", "inputSchema": schema({"issue_id": string, "specification_id": string, "repositories": strings, "components": strings, "max_chars": integer})},
         {"name": "create_document", "description": "Create a validated Markdown document without overwrite.", "inputSchema": schema({"path": string, "content": string}, ["path", "content"])},
-        {"name": "update_document", "description": "Atomically update an existing validated document.", "inputSchema": schema({"path": string, "content": string}, ["path", "content"])},
-        {"name": "update_section", "description": "Append or replace a named section atomically.", "inputSchema": schema({"path": string, "section": string, "content": string, "append": {"type": "boolean"}}, ["path", "section", "content"])},
+        {"name": "update_document", "description": "Atomically update an existing validated document with optimistic concurrency.", "inputSchema": schema({"path": string, "content": string, "expected_revision": string}, ["path", "content", "expected_revision"])},
+        {"name": "update_section", "description": "Append or replace a named section with optimistic concurrency.", "inputSchema": schema({"path": string, "section": string, "content": string, "expected_revision": string, "append": {"type": "boolean"}}, ["path", "section", "content", "expected_revision"])},
         {"name": "create_adr", "description": "Create an ADR from the canonical template.", "inputSchema": schema({"id": string, "short_name": string, "title": string, "status": string}, ["id", "short_name", "title"])},
         {"name": "create_specification", "description": "Create a specification from the canonical template.", "inputSchema": schema({"id": string, "short_name": string, "title": string, "status": string}, ["id", "short_name", "title"])},
-        {"name": "update_specification_status", "description": "Update specification status and updated date.", "inputSchema": schema({"id": string, "status": string}, ["id", "status"])},
-        {"name": "update_implementation_result", "description": "Replace a specification Implementation Result section.", "inputSchema": schema({"id": string, "content": string}, ["id", "content"])},
-        {"name": "update_deviations", "description": "Replace a specification Deviations from Specification section.", "inputSchema": schema({"id": string, "content": string}, ["id", "content"])},
+        {"name": "update_specification_status", "description": "Update specification status and updated date with optimistic concurrency.", "inputSchema": schema({"id": string, "status": string, "expected_revision": string}, ["id", "status", "expected_revision"])},
+        {"name": "update_implementation_result", "description": "Replace a specification Implementation Result section with optimistic concurrency.", "inputSchema": schema({"id": string, "content": string, "expected_revision": string}, ["id", "content", "expected_revision"])},
+        {"name": "update_deviations", "description": "Replace a specification Deviations from Specification section with optimistic concurrency.", "inputSchema": schema({"id": string, "content": string, "expected_revision": string}, ["id", "content", "expected_revision"])},
         {"name": "validate_memory_bank", "description": "Run structural, metadata, link, portability, and SDD validation.", "inputSchema": schema({})},
     ]
 
@@ -77,7 +77,11 @@ class MemoryBankAPI:
 
     def tool_get_metadata(self, path: str) -> Any:
         document = self.store.get(path)
-        return {"path": document.path, "metadata": document.metadata}
+        return {
+            "path": document.path,
+            "metadata": document.metadata,
+            "revision": document.revision,
+        }
 
     def tool_get_summary(self, path: str, max_chars: int = 4_000) -> Any:
         return self.store.read_summary(path, max_chars)
@@ -121,11 +125,28 @@ class MemoryBankAPI:
     def tool_create_document(self, path: str, content: str) -> Any:
         return self.store.create(path, content)
 
-    def tool_update_document(self, path: str, content: str) -> Any:
-        return self.store.update(path, content)
+    def tool_update_document(
+        self, path: str, content: str, expected_revision: str
+    ) -> Any:
+        return self.store.update(
+            path, content, expected_revision=expected_revision
+        )
 
-    def tool_update_section(self, path: str, section: str, content: str, append: bool = False) -> Any:
-        return self.store.update_section(path, section, content, append=append)
+    def tool_update_section(
+        self,
+        path: str,
+        section: str,
+        content: str,
+        expected_revision: str,
+        append: bool = False,
+    ) -> Any:
+        return self.store.update_section(
+            path,
+            section,
+            content,
+            expected_revision=expected_revision,
+            append=append,
+        )
 
     def tool_create_adr(self, id: str, short_name: str, title: str, status: str = "proposed") -> Any:
         path = f"decisions/{id.casefold()}-{_safe_name(short_name)}.md"
@@ -153,17 +174,37 @@ class MemoryBankAPI:
             },
         )
 
-    def tool_update_specification_status(self, id: str, status: str) -> Any:
+    def tool_update_specification_status(
+        self, id: str, status: str, expected_revision: str
+    ) -> Any:
         path = self.store.get_by_id(id, "specification").path
-        return self.store.update_front_matter(path, {"status": status, "updated": date.today().isoformat()})
+        return self.store.update_front_matter(
+            path,
+            {"status": status, "updated": date.today().isoformat()},
+            expected_revision=expected_revision,
+        )
 
-    def tool_update_implementation_result(self, id: str, content: str) -> Any:
+    def tool_update_implementation_result(
+        self, id: str, content: str, expected_revision: str
+    ) -> Any:
         path = self.store.get_by_id(id, "specification").path
-        return self.store.update_section(path, "Implementation Result", content)
+        return self.store.update_section(
+            path,
+            "Implementation Result",
+            content,
+            expected_revision=expected_revision,
+        )
 
-    def tool_update_deviations(self, id: str, content: str) -> Any:
+    def tool_update_deviations(
+        self, id: str, content: str, expected_revision: str
+    ) -> Any:
         path = self.store.get_by_id(id, "specification").path
-        return self.store.update_section(path, "Deviations from Specification", content)
+        return self.store.update_section(
+            path,
+            "Deviations from Specification",
+            content,
+            expected_revision=expected_revision,
+        )
 
     def tool_validate_memory_bank(self) -> Any:
         return MemoryBankValidator(self.store).run()
@@ -172,4 +213,3 @@ class MemoryBankAPI:
 def _safe_name(value: str) -> str:
     cleaned = "".join(character.casefold() if character.isalnum() else "-" for character in value)
     return "-".join(part for part in cleaned.split("-") if part)
-

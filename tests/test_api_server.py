@@ -1,16 +1,11 @@
 from __future__ import annotations
 
-import json
-import os
 import shutil
-import subprocess
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 from memory_bank_mcp.api import MemoryBankAPI, tool_definitions
-from memory_bank_mcp.server import MCPServer
 from memory_bank_mcp.store import MemoryBankStore
 
 
@@ -20,60 +15,24 @@ TASK_ROOT = Path(__file__).resolve().parents[1]
 class APIServerTests(unittest.TestCase):
     def setUp(self) -> None:
         self.store = MemoryBankStore(TASK_ROOT / "memory-bank")
-        self.server = MCPServer(self.store)
 
     def test_tool_list_and_summary_call(self) -> None:
         names = {item["name"] for item in tool_definitions()}
         self.assertIn("get_task_context", names)
         self.assertIn("create_specification", names)
-        response = self.server.handle(
-            {
-                "jsonrpc": "2.0",
-                "id": 1,
-                "method": "tools/call",
-                "params": {"name": "get_summary", "arguments": {"path": "README.md"}},
-            }
+        response = MemoryBankAPI(self.store).call(
+            "get_summary", {"path": "README.md"}
         )
-        self.assertFalse(response["result"]["isError"])
-        self.assertIn("Kafka Adapter Memory Bank", response["result"]["content"][0]["text"])
+        self.assertIn("compact project knowledge index", response["summary"])
+        self.assertEqual(64, len(response["revision"]))
 
     def test_resources_include_tree_and_cyrillic_content(self) -> None:
-        response = self.server.handle({"jsonrpc": "2.0", "id": 2, "method": "resources/list"})
-        uris = {item["uri"] for item in response["result"]["resources"]}
-        self.assertIn("memory-bank:///tree", uris)
-        read = self.server.handle(
-            {
-                "jsonrpc": "2.0",
-                "id": 3,
-                "method": "resources/read",
-                "params": {"uri": "memory-bank:///repositories/kafka-adapter.md"},
-            }
+        self.assertIn(
+            "кфкИнтеграция",
+            self.store.read_document(
+                "repositories/kafka-adapter.md", max_chars=1_000_000
+            ),
         )
-        self.assertIn("кфкИнтеграция", read["result"]["contents"][0]["text"])
-
-    def test_stdio_startup(self) -> None:
-        environment = os.environ.copy()
-        environment["KAFKA_PROJECTS_ROOT"] = str(TASK_ROOT.parent)
-        environment["PYTHONPATH"] = str(TASK_ROOT / "src")
-        process = subprocess.Popen(
-            [sys.executable, "-m", "memory_bank_mcp.server"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            env=environment,
-        )
-        request = {
-            "jsonrpc": "2.0",
-            "id": 10,
-            "method": "initialize",
-            "params": {"protocolVersion": "2024-11-05", "capabilities": {}},
-        }
-        stdout, stderr = process.communicate(json.dumps(request, ensure_ascii=False) + "\n", timeout=10)
-        self.assertEqual("", stderr)
-        response = json.loads(stdout.strip())
-        self.assertEqual("kafka-adapter-memory-bank", response["result"]["serverInfo"]["name"])
 
     def test_adr_and_specification_lifecycle(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -114,21 +73,31 @@ class APIServerTests(unittest.TestCase):
                     "affected_components": ["queues"],
                     "related_adrs": ["ADR-0042"],
                 },
+                expected_revision=api.store.get(specification_path).revision,
             )
-            api.call(
+            result = api.call(
                 "update_specification_status",
-                {"id": "SPEC-0042", "status": "in-progress"},
+                {
+                    "id": "SPEC-0042",
+                    "status": "in-progress",
+                    "expected_revision": api.store.get(specification_path).revision,
+                },
             )
-            api.call(
+            result = api.call(
                 "update_implementation_result",
                 {
                     "id": "SPEC-0042",
                     "content": "Implemented in a temporary test store.",
+                    "expected_revision": result["revision"],
                 },
             )
             api.call(
                 "update_deviations",
-                {"id": "SPEC-0042", "content": "No deviations."},
+                {
+                    "id": "SPEC-0042",
+                    "content": "No deviations.",
+                    "expected_revision": result["revision"],
+                },
             )
 
             cards = api.call(

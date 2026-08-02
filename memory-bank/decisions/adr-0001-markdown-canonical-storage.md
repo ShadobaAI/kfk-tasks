@@ -4,13 +4,14 @@ id: ADR-0001
 type: decision
 status: accepted
 created: 2026-07-29
-updated: 2026-07-29
+updated: 2026-08-02
 related_specifications:
   - SPEC-0001
 affected_repositories:
   - kfk-tasks
 sources:
-  - "repo:kfk-tasks:IMPLEMENTATION-PLAN.md"
+  - "repo:kfk-tasks:memory-bank/specifications/spec-0001-memory-bank-foundation.md"
+  - "repo:kfk-tasks:src/memory_bank_mcp/store.py"
 related:
   - ../specifications/spec-0001-memory-bank-foundation.md
 ---
@@ -57,10 +58,9 @@ scanning; an mtime cache is sufficient for the current expected scale.
 
 ## Evidence
 
-- `repo:kfk-tasks:IMPLEMENTATION-PLAN.md`
+- `repo:kfk-tasks:memory-bank/specifications/spec-0001-memory-bank-foundation.md`
 - `repo:kfk-tasks:src/memory_bank_mcp/store.py`
 
 ## Related Documents
 
 - [Foundation specification](../specifications/spec-0001-memory-bank-foundation.md)
-

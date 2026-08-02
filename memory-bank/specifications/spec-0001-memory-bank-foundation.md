@@ -5,7 +5,7 @@ type: specification
 status: verified
 owner: kafka-adapter maintainers
 created: 2026-07-29
-updated: 2026-07-29
+updated: 2026-08-02
 github_issue:
 affected_repositories:
   - kfk-tasks
@@ -21,7 +21,10 @@ tags:
   - documentation
   - mcp
 sources:
-  - "repo:kfk-tasks:IMPLEMENTATION-PLAN.md"
+  - "repo:kfk-tasks:README.md"
+  - "repo:kfk-tasks:docs/mcp.md"
+  - "repo:kfk-tasks:src/memory_bank_mcp/store.py"
+  - "repo:kfk-tasks:src/memory_bank_mcp/server.py"
 related:
   - ../decisions/adr-0001-markdown-canonical-storage.md
   - ../README.md
@@ -87,9 +90,9 @@ tests, and editor instructions.
 
 ## Architecture and Design
 
-Use an in-process Markdown store with mtime/size cache. Expose a stdio MCP
-JSON-RPC boundary. Validate content before atomic sibling-file replacement.
-Use PyYAML only for front matter.
+Use an in-process Markdown store with mtime/size cache. Expose MCP through the
+official SDK Streamable HTTP transport. Validate content and expected revision
+before atomic sibling-file replacement. Use PyYAML for front matter.
 
 ## Implementation Plan
 
@@ -106,15 +109,16 @@ and PyYAML. Markdown remains usable without Python or MCP.
 
 ## Testing
 
-Use standard-library `unittest` for document operations, security cases,
-validation, context bundles, and MCP subprocess behavior.
+Use `unittest` for document operations, ranking regression, security cases,
+validation, context bundles, and real Streamable HTTP client behavior.
 
 ## Risks
 
 - Some architecture claims remain runtime-unverified.
 - Version claims differ between metadata and prose.
 - Lexical search is less flexible than semantic search.
-- Manual concurrent writers are not coordinated by a distributed lock.
+- External editors that do not use the advisory MCP lock can still race with a
+  write in the final revision-check window.
 
 ## Acceptance Criteria
 
@@ -132,18 +136,16 @@ remain project-level verification work, not foundation blockers.
 
 ## Implementation Result
 
-The documented Memory Bank, stdio MCP server, validator, configuration examples,
-editor guidance, and focused automated test suite were implemented in
-`kfk-tasks`. Twelve automated tests pass; the optional Windows symlink test is
-skipped where symlink creation is not permitted. The validator reports 34
-documents with zero errors and zero warnings. A real stdio process completed
-initialization and representative bounded read, search, context, and validation
-calls.
+The documented Memory Bank, Streamable HTTP MCP server, validator,
+configuration examples, editor guidance, and focused automated test suite are
+implemented in `kfk-tasks`. The optional Windows symlink test is skipped where
+symlink creation is not permitted. A real HTTP client completes MCP
+initialization and a representative tool call.
 
 ## Deviations from Specification
 
-The MCP protocol boundary is implemented directly over stdio JSON-RPC to avoid a
-runtime dependency on an MCP SDK. PyYAML is the only application dependency.
+The server uses the official Python MCP SDK 1.27.x Streamable HTTP
+implementation. It remains stateless and bound to loopback by default.
 
 ## Memory Bank Updates
 

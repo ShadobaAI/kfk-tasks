@@ -188,14 +188,14 @@ Code Metadata Search and Graph Metadata Search are restricted to
 
 ## Memory Bank MCP
 
-The local stdio service supports:
+The local stateless Streamable HTTP service supports:
 
 - document listing, tree, metadata, summary, section, and line ranges;
-- ranked and exact search with bounded output;
+- BM25-style ranked and exact search with bounded diagnostic output;
 - repository/component/type/status filtering;
 - ADR and specification retrieval;
 - compact task-context bundles;
-- validated document, ADR, specification, and section writes;
+- revision-protected document, ADR, specification, and section writes;
 - specification lifecycle/result/deviation updates;
 - structural and link validation.
 

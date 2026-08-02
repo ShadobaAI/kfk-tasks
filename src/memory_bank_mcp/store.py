@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import hmac
+import logging
 import os
 import re
 import tempfile
+import threading
+import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path, PurePosixPath
@@ -11,14 +17,71 @@ from typing import Any, Iterable
 
 import yaml
 
+from .search import SearchIndex
+
+if os.name == "nt":
+    import msvcrt
+else:
+    import fcntl
+
 
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$", re.MULTILINE)
 LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 DRIVE_RE = re.compile(r"^[A-Za-z]:[\\/]")
+LOGGER = logging.getLogger("memory_bank_mcp")
 
 
 class MemoryBankError(ValueError):
     """Expected client-facing error."""
+
+
+@contextmanager
+def exclusive_file_lock(path: Path, timeout_seconds: float = 30.0):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        descriptor = os.open(
+            path,
+            os.O_CREAT | os.O_EXCL | os.O_WRONLY,
+        )
+    except FileExistsError:
+        pass
+    else:
+        with os.fdopen(descriptor, "wb") as initializer:
+            initializer.write(b"\0")
+            initializer.flush()
+            os.fsync(initializer.fileno())
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        handle = path.open("r+b")
+        if path.stat().st_size:
+            break
+        handle.close()
+        if time.monotonic() >= deadline:
+            raise MemoryBankError("Timed out initializing the write lock")
+        time.sleep(0.01)
+    try:
+        while True:
+            try:
+                handle.seek(0)
+                if os.name == "nt":
+                    msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError as error:
+                if time.monotonic() >= deadline:
+                    raise MemoryBankError("Timed out waiting for the write lock") from error
+                time.sleep(0.05)
+        try:
+            yield
+        finally:
+            handle.seek(0)
+            if os.name == "nt":
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    finally:
+        handle.close()
 
 
 def _json_safe(value: Any) -> Any:
@@ -43,6 +106,10 @@ class Document:
     @property
     def title(self) -> str:
         return str(self.metadata.get("title") or Path(self.path).stem)
+
+    @property
+    def revision(self) -> str:
+        return hashlib.sha256(self.text.encode("utf-8")).hexdigest()
 
 
 def parse_markdown(text: str, path: str = "") -> Document:
@@ -116,6 +183,12 @@ class MemoryBankStore:
     def __init__(self, root: Path):
         self.root = root.resolve()
         self._cache: dict[str, tuple[int, int, Document]] = {}
+        self._search_index = SearchIndex()
+        self._write_lock = threading.RLock()
+        self._cache_lock = threading.RLock()
+        self._index_lock = threading.RLock()
+        self._cross_process_lock_path = self.root / ".memory-bank-write.lock"
+        self._prepared = False
 
     @classmethod
     def from_environment(cls) -> "MemoryBankStore":
@@ -175,21 +248,64 @@ class MemoryBankStore:
         )
 
     def get(self, value: str) -> Document:
-        path = self.resolve(value)
-        if not path.is_file():
-            raise MemoryBankError(f"Document not found: {value}")
-        stat = path.stat()
-        key = self._relative_name(path)
-        cached = self._cache.get(key)
-        if cached and cached[0] == stat.st_mtime_ns and cached[1] == stat.st_size:
-            return cached[2]
-        text = path.read_text(encoding="utf-8")
-        document = parse_markdown(text, key)
-        self._cache[key] = (stat.st_mtime_ns, stat.st_size, document)
-        return document
+        with self._cache_lock:
+            path = self.resolve(value)
+            if not path.is_file():
+                raise MemoryBankError(f"Document not found: {value}")
+            stat = path.stat()
+            key = self._relative_name(path)
+            cached = self._cache.get(key)
+            if cached and cached[0] == stat.st_mtime_ns and cached[1] == stat.st_size:
+                return cached[2]
+            text = path.read_text(encoding="utf-8")
+            document = parse_markdown(text, key)
+            self._cache[key] = (stat.st_mtime_ns, stat.st_size, document)
+            return document
 
     def documents(self) -> list[Document]:
         return [self.get(self._relative_name(path)) for path in self.paths()]
+
+    def _refresh_search_index(self) -> None:
+        with self._index_lock:
+            started = time.perf_counter()
+            paths = self.paths()
+            signatures: dict[str, tuple[int, int]] = {}
+            changed: dict[str, Document] = {}
+            for path in paths:
+                name = self._relative_name(path)
+                stat = path.stat()
+                signature = (stat.st_mtime_ns, stat.st_size)
+                signatures[name] = signature
+                if self._search_index.signatures.get(name) != signature:
+                    changed[name] = self.get(name)
+            removed_count = len(set(self._search_index.documents) - set(signatures))
+            with self._cache_lock:
+                for removed in set(self._cache) - set(signatures):
+                    self._cache.pop(removed, None)
+            if self._search_index.refresh(signatures, changed):
+                LOGGER.info(
+                    json.dumps(
+                        {
+                            "event": "search_index_updated",
+                            "documents": len(signatures),
+                            "changed": len(changed),
+                            "removed": removed_count,
+                            "duration_ms": round(
+                                (time.perf_counter() - started) * 1000, 3
+                            ),
+                        },
+                        separators=(",", ":"),
+                    )
+                )
+            self._prepared = True
+
+    def prepare(self) -> None:
+        if not self.root.is_dir():
+            raise MemoryBankError(f"Memory Bank root not found: {self.root}")
+        self._refresh_search_index()
+
+    def is_ready(self) -> bool:
+        return self._prepared and self.root.is_dir()
 
     @staticmethod
     def _matches(document: Document, filters: dict[str, Any]) -> bool:
@@ -222,6 +338,7 @@ class MemoryBankStore:
                     "title": document.title,
                     "metadata": document.metadata,
                     "summary": document.summary[:800],
+                    "revision": document.revision,
                 }
             )
             if len(output) >= limit:
@@ -244,6 +361,7 @@ class MemoryBankStore:
             "path": document.path,
             "metadata": document.metadata,
             "summary": bounded(document.summary, max_chars),
+            "revision": document.revision,
         }
 
     def read_section(self, path: str, section: str, max_chars: int = 10_000) -> str:
@@ -279,44 +397,28 @@ class MemoryBankStore:
     ) -> dict[str, Any]:
         if not query:
             raise MemoryBankError("query is required")
-        needle = query.casefold()
-        terms = [term for term in re.split(r"\s+", needle) if term]
-        results: list[dict[str, Any]] = []
-        for document in self.documents():
-            if not self._matches(document, filters):
-                continue
-            haystack = document.text.casefold()
-            if exact:
-                score = haystack.count(needle)
-            else:
-                score = sum(haystack.count(term) for term in terms)
-                if needle in haystack:
-                    score += 10
-            if score <= 0:
-                continue
-            index = haystack.find(needle)
-            if index < 0:
-                index = min((haystack.find(term) for term in terms if term in haystack), default=0)
-            start = max(0, index - 180)
-            end = min(len(document.text), index + len(query) + 300)
-            fragment = re.sub(r"\s+", " ", document.text[start:end]).strip()
-            results.append(
-                {
-                    "path": document.path,
-                    "title": document.title,
-                    "metadata": document.metadata,
-                    "fragment": fragment,
-                    "score": score,
-                }
+        with self._index_lock:
+            self._refresh_search_index()
+            results = self._search_index.search(
+                query,
+                exact=exact,
+                predicate=lambda document: self._matches(document, filters),
             )
-        results.sort(key=lambda item: (-item["score"], item["path"].casefold()))
         selected = results[: max(1, min(int(limit), 100))]
-        payload = {"query": query, "exact": exact, "count": len(selected), "results": selected}
-        encoded = json.dumps(payload, ensure_ascii=False, indent=2)
-        if len(encoded) > max_chars:
-            while selected and len(json.dumps(payload, ensure_ascii=False)) > max_chars:
+        maximum = max(256, min(int(max_chars), 1_000_000))
+        payload = {
+            "query": bounded(query, min(1000, max(64, maximum // 4))),
+            "exact": exact,
+            "count": len(selected),
+            "results": selected,
+        }
+        if len(json.dumps(payload, ensure_ascii=False)) > maximum:
+            while selected and len(json.dumps(payload, ensure_ascii=False)) > maximum:
                 selected.pop()
             payload["omitted"] = len(results) - len(selected)
+            payload["count"] = len(selected)
+        if len(json.dumps(payload, ensure_ascii=False)) > maximum:
+            payload["query"] = bounded(query, 64)
         return payload
 
     def related(self, path: str, limit: int = 50) -> list[dict[str, str]]:
@@ -431,28 +533,50 @@ class MemoryBankStore:
             raise MemoryBankError("A non-empty '## Summary' section is required")
 
     def create(self, path: str, content: str) -> dict[str, Any]:
-        target = self.resolve(path, for_write=True)
-        if target.exists():
-            raise MemoryBankError(f"Create will not overwrite: {path}")
-        self._validate_write(content, path)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        self._write_atomic(target, content)
-        return {"created": path}
+        with self._write_lock:
+            with exclusive_file_lock(self._cross_process_lock_path):
+                target = self.resolve(path, for_write=True)
+                if target.exists():
+                    raise MemoryBankError(f"Create will not overwrite: {path}")
+                self._validate_write(content, path)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target = self.resolve(path, for_write=True)
+                revision = self._write_atomic(target, content, create=True)
+                return {"created": path, "revision": revision}
 
-    def update(self, path: str, content: str) -> dict[str, Any]:
-        target = self.resolve(path, for_write=True)
-        if not target.is_file():
-            raise MemoryBankError(f"Update requires an existing document: {path}")
-        self._validate_write(content, path)
-        self._write_atomic(target, content)
-        return {"updated": path}
+    def update(
+        self, path: str, content: str, *, expected_revision: str
+    ) -> dict[str, Any]:
+        with self._write_lock:
+            with exclusive_file_lock(self._cross_process_lock_path):
+                target = self.resolve(path, for_write=True)
+                if not target.is_file():
+                    raise MemoryBankError(
+                        f"Update requires an existing document: {path}"
+                    )
+                self._assert_revision(path, expected_revision)
+                self._validate_write(content, path)
+                revision = self._write_atomic(
+                    target,
+                    content,
+                    expected_revision=expected_revision,
+                )
+                return {"updated": path, "revision": revision}
 
     def update_section(
-        self, path: str, section: str, content: str, *, append: bool = False
+        self,
+        path: str,
+        section: str,
+        content: str,
+        *,
+        expected_revision: str,
+        append: bool = False,
     ) -> dict[str, Any]:
-        document = self.get(path)
-        updated = replace_section(document.text, section, content, append)
-        return self.update(path, updated)
+        with self._write_lock:
+            document = self.get(path)
+            self._assert_revision(path, expected_revision)
+            updated = replace_section(document.text, section, content, append)
+            return self.update(path, updated, expected_revision=expected_revision)
 
     def create_from_template(
         self,
@@ -466,17 +590,43 @@ class MemoryBankStore:
             text = text.replace(source, target)
         return self.create(path, text)
 
-    def update_front_matter(self, path: str, updates: dict[str, Any]) -> dict[str, Any]:
-        document = self.get(path)
-        metadata = dict(document.metadata)
-        metadata.update(updates)
-        front = yaml.safe_dump(
-            metadata, allow_unicode=True, sort_keys=False, default_flow_style=False
-        ).strip()
-        content = f"---\n{front}\n---\n{document.body.lstrip()}"
-        return self.update(path, content)
+    def update_front_matter(
+        self, path: str, updates: dict[str, Any], *, expected_revision: str
+    ) -> dict[str, Any]:
+        with self._write_lock:
+            document = self.get(path)
+            self._assert_revision(path, expected_revision)
+            metadata = dict(document.metadata)
+            metadata.update(updates)
+            front = yaml.safe_dump(
+                metadata, allow_unicode=True, sort_keys=False, default_flow_style=False
+            ).strip()
+            content = f"---\n{front}\n---\n{document.body.lstrip()}"
+            return self.update(path, content, expected_revision=expected_revision)
 
-    def _write_atomic(self, target: Path, content: str) -> None:
+    def _assert_revision(self, path: str, expected_revision: str) -> None:
+        if not expected_revision:
+            raise MemoryBankError("expected_revision is required for updates")
+        actual = self._file_revision(self.resolve(path))
+        if not secrets_compare(actual, expected_revision):
+            raise MemoryBankError(
+                f"Revision conflict for {path}: document changed since it was read"
+            )
+
+    @staticmethod
+    def _file_revision(path: Path) -> str:
+        text = path.read_text(encoding="utf-8")
+        normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+        return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+    def _write_atomic(
+        self,
+        target: Path,
+        content: str,
+        *,
+        create: bool = False,
+        expected_revision: str | None = None,
+    ) -> str:
         normalized = content.replace("\r\n", "\n").replace("\r", "\n")
         if not normalized.endswith("\n"):
             normalized += "\n"
@@ -488,14 +638,40 @@ class MemoryBankStore:
                 handle.write(normalized)
                 handle.flush()
                 os.fsync(handle.fileno())
-            os.replace(temporary, target)
-            self._cache.pop(self._relative_name(target), None)
-        except Exception:
+            key = self._relative_name(target)
+            target = self.resolve(key, for_write=True)
+            if create:
+                try:
+                    os.link(temporary, target)
+                except FileExistsError as error:
+                    raise MemoryBankError(f"Create will not overwrite: {key}") from error
+            else:
+                if expected_revision is None:
+                    raise MemoryBankError("expected_revision is required for updates")
+                if not target.is_file():
+                    raise MemoryBankError(
+                        f"Update requires an existing document: {key}"
+                    )
+                actual = self._file_revision(target)
+                if not secrets_compare(actual, expected_revision):
+                    raise MemoryBankError(
+                        f"Revision conflict for {key}: document changed during update"
+                    )
+                os.replace(temporary, target)
+                temporary = ""
+            with self._cache_lock:
+                self._cache.pop(key, None)
+            return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+        finally:
             try:
-                os.unlink(temporary)
-            except FileNotFoundError:
+                if temporary:
+                    os.unlink(temporary)
+            except OSError:
                 pass
-            raise
+
+
+def secrets_compare(left: str, right: str) -> bool:
+    return hmac.compare_digest(left, right)
 
 
 def _as_list(value: Any) -> list[Any]:

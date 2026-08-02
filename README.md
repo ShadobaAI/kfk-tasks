@@ -1,7 +1,7 @@
 # Kafka Adapter — задачи, Memory Bank и SDD
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
-![MCP](https://img.shields.io/badge/MCP-stdio-blue)
+![MCP](https://img.shields.io/badge/MCP-Streamable_HTTP-blue)
 ![Хранилище](https://img.shields.io/badge/Хранилище-Markdown-green)
 [![Issues](https://img.shields.io/github/issues/ShadobaAI/kfk-tasks)](https://github.com/ShadobaAI/kfk-tasks/issues)
 
@@ -55,8 +55,14 @@ memory-bank validate
 memory-bank-mcp
 ```
 
-MCP-сервер работает через `stdio`. База данных, облачные сервисы и обязательные
-плагины редактора не требуются.
+MCP-сервер слушает `http://127.0.0.1:8767/mcp` в stateless Streamable HTTP
+режиме. Подключение Codex:
+
+```powershell
+codex mcp add memory-bank --url http://127.0.0.1:8767/mcp
+```
+
+База данных, облачные сервисы и embeddings не требуются.
 
 ## Структура
 

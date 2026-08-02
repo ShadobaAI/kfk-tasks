@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 
-from .server import main as server_main
+from .server import add_server_arguments, config_from_arguments, configure_logging, create_app
 from .store import MemoryBankStore
 from .validator import MemoryBankValidator
 
@@ -13,10 +13,21 @@ def main() -> None:
     subcommands = parser.add_subparsers(dest="command", required=True)
     validate = subcommands.add_parser("validate", help="validate Markdown and metadata")
     validate.add_argument("--json", action="store_true", dest="as_json")
-    subcommands.add_parser("serve", help="start the stdio MCP server")
+    serve = subcommands.add_parser("serve", help="start the Streamable HTTP MCP server")
+    add_server_arguments(serve)
     arguments = parser.parse_args()
     if arguments.command == "serve":
-        server_main()
+        import uvicorn
+
+        configure_logging()
+        config = config_from_arguments(arguments)
+        uvicorn.run(
+            create_app(config=config),
+            host=config.host,
+            port=config.port,
+            access_log=False,
+            log_config=None,
+        )
         return
     result = MemoryBankValidator(MemoryBankStore.from_environment()).run()
     if arguments.as_json:
@@ -36,4 +47,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

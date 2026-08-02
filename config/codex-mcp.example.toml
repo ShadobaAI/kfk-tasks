@@ -1,8 +1,2 @@
 [mcp_servers.memory-bank]
-command = "python"
-args = ["-m", "memory_bank_mcp.server"]
-cwd = "${KAFKA_PROJECTS_ROOT}/tasks"
-
-[mcp_servers.memory-bank.env]
-KAFKA_PROJECTS_ROOT = "${KAFKA_PROJECTS_ROOT}"
-
+url = "http://127.0.0.1:8767/mcp"
