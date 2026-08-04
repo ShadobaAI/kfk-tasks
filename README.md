@@ -1,95 +1,48 @@
-# Kafka Adapter — задачи, Memory Bank и SDD
+# Kafka Adapter — задачи, SDD и ADR
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue)
-![MCP](https://img.shields.io/badge/MCP-Streamable_HTTP-blue)
-![Хранилище](https://img.shields.io/badge/Хранилище-Markdown-green)
 [![Issues](https://img.shields.io/github/issues/ShadobaAI/kfk-tasks)](https://github.com/ShadobaAI/kfk-tasks/issues)
 
-Задачи, проектная база знаний, Specification-Driven Development и локальный
-MCP-сервер для экосистемы
-[1С: Адаптер Kafka](https://github.com/ShadobaAI/kafka-adapter).
+Репозиторий координации разработки экосистемы [1С: Адаптер Kafka](https://github.com/ShadobaAI/kafka-adapter).
 
 ## Назначение
 
-Репозиторий содержит инструменты и документацию для сопровождения проекта:
+- **GitHub Issues** — постановка, обсуждение и контроль задач.
+- **GitHub Projects** — визуальное представление хода работ.
+- **SDD** — требования, design, acceptance criteria и фактические результаты значимых изменений.
+- **ADR** — устойчивые архитектурные решения и их последствия.
 
-- **GitHub Issues** — постановка, обсуждение и контроль проектных задач;
-- **GitHub Projects** — визуальное представление текущего хода работ;
-- **Memory Bank** — архитектура, карта репозиториев, компоненты, публичный API,
-  потоки данных и правила разработки;
-- **SDD и ADR** — спецификации изменений и архитектурные решения;
-- **Memory Bank MCP** — ограниченное чтение, поиск, формирование контекста задачи
-  и контролируемое изменение Markdown-документов;
-- **валидатор** — проверка структуры, метаданных, ссылок, якорей и переносимости
-  базы знаний.
-
-Начальная точка навигации — [Memory Bank](memory-bank/README.md).
-
-## Issues и управление работами
-
-Задачи проекта создаются в
-[GitHub Issues](https://github.com/ShadobaAI/kfk-tasks/issues), а их состояние
-отслеживается на
-[доске GitHub Projects](https://github.com/users/ShadobaAI/projects/3/views/1).
-
-Перед созданием Issue проверь существующие задачи. В описании укажи:
-
-- затронутые репозитории и компоненты;
-- текущее и ожидаемое поведение;
-- шаги воспроизведения для ошибки либо ожидаемый результат для изменения;
-- ограничения совместимости и критерии приёмки;
-- связанные спецификации, ADR, pull requests и commits при их наличии.
-
-Issue используется для обсуждения и контроля работы. Устойчивые требования
-значимого изменения фиксируются в SDD-спецификации, а архитектурные решения —
-в ADR. Идентификаторы `SPEC-NNNN` и `ADR-NNNN` не зависят от номера Issue.
-
-## Быстрый старт
-
-Требуется Python 3.10 или новее.
-
-```powershell
-$env:KAFKA_PROJECTS_ROOT = Split-Path -Parent $PWD
-python -m pip install -e .
-memory-bank validate
-memory-bank-mcp
-```
-
-MCP-сервер слушает `http://127.0.0.1:8767/mcp` в stateless Streamable HTTP
-режиме. Подключение Codex:
-
-```powershell
-codex mcp add memory-bank --url http://127.0.0.1:8767/mcp
-```
-
-База данных, облачные сервисы и embeddings не требуются.
+Product architecture, API, operations и user guidance сопровождаются в owning repositories. Текущие source и tests имеют приоритет над документацией при расхождении.
 
 ## Структура
 
-| Каталог | Назначение |
+| Путь | Назначение |
 |---|---|
-| [`memory-bank/`](memory-bank/README.md) | Каноническая проектная база знаний |
-| [`memory-bank/specifications/`](memory-bank/specifications/README.md) | SDD-спецификации и их жизненный цикл |
-| [`memory-bank/decisions/`](memory-bank/decisions/README.md) | ADR и шаблон архитектурного решения |
-| [`src/memory_bank_mcp/`](src/memory_bank_mcp/) | MCP-сервер, хранилище и валидатор |
-| [`tests/`](tests/) | Автоматические тесты |
-| [`config/`](config/) | Примеры переносимой конфигурации |
-| [`docs/`](docs/) | Установка, настройка и эксплуатация |
+| [`sdd/`](sdd/README.md) | Specifications, lifecycle, index и template |
+| [`adr/`](adr/README.md) | Architecture decisions, lifecycle, index и template |
+| [`AGENTS.md`](AGENTS.md) | Repository-specific инструкции для агентов |
 
-## Документация
+## Issues и управление работами
 
-- [Установка и запуск](docs/installation.md) — требования, установка пакета,
-  запуск MCP-сервера и проверка работоспособности.
-- [Настройка](docs/configuration.md) — `KAFKA_PROJECTS_ROOT`, карта репозиториев,
-  кодировка и правила хранения секретов.
-- [MCP-инструменты и ресурсы](docs/mcp.md) — транспорт, операции чтения и записи,
-  ограничения размера ответа и поддерживаемое подмножество протокола.
-- [VS Code и Obsidian](docs/vscode-obsidian.md) — открытие Memory Bank,
-  навигация по ссылкам и ручная проверка.
-- [Валидация и тесты](docs/validation-and-tests.md) — состав проверок, команды
-  запуска и покрытые сценарии.
-- [Ограничения и риски](docs/limitations.md) — границы поиска, кеширования,
-  конкурентной записи, файловой безопасности и интеграционной проверки.
+Задачи создаются в [GitHub Issues](https://github.com/ShadobaAI/kfk-tasks/issues), а их состояние отслеживается на [доске GitHub Projects](https://github.com/users/ShadobaAI/projects/3/views/1).
 
-Markdown-файлы в `memory-bank/` являются единственным источником проектного
-контекста. Они читаются и редактируются без MCP-сервера.
+В Issue укажи:
+
+- затронутые репозитории и компоненты;
+- текущее и ожидаемое поведение;
+- шаги воспроизведения либо ожидаемый результат;
+- compatibility constraints и acceptance criteria;
+- связанные SPEC, ADR, pull requests и commits.
+
+Issue используется для обсуждения и контроля. Устойчивые требования значимого изменения фиксируются в SDD, а долговременные architecture decisions — в ADR. Идентификаторы `SPEC-NNNN` и `ADR-NNNN` не зависят от номера Issue.
+
+## Рабочий процесс
+
+1. Определи owning repositories и прочитай их `AGENTS.md`.
+2. Для нетривиального или multi-repository изменения создай draft SDD на русском языке.
+3. Получи явное утверждение SDD до реализации.
+4. Создай ADR, если меняется долговременная architecture или component boundary.
+5. После реализации запиши фактический результат, проверки и отклонения.
+6. Обнови owning repository documentation, если изменился её contract.
+
+Подробные правила находятся в [SDD index](sdd/README.md), [ADR index](adr/README.md) и workspace/repository `AGENTS.md`.
+
