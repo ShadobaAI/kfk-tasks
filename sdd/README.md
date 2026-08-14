@@ -57,5 +57,6 @@ non-terminal -> superseded
 | [SPEC-0006](spec-0006-workspace-agents.md) | Общие инструкции мультирепозитория | `verified` |
 | [SPEC-0007](spec-0007-memory-bank-retirement.md) | Вывод Memory Bank из эксплуатации | `verified` |
 | [SPEC-0008](spec-0008-project-verification-backlog.md) | Верификация внешней совместимости | `draft` |
+| [SPEC-0009](spec-0009-kfk-code-placement.md) | Переразмещение логики объектов спецификаций КФК | `implemented` |
 
 Для новой спецификации скопируй [template](template.md).
