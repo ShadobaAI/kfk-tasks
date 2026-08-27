@@ -58,5 +58,7 @@ non-terminal -> superseded
 | [SPEC-0007](spec-0007-memory-bank-retirement.md) | Вывод Memory Bank из эксплуатации | `verified` |
 | [SPEC-0008](spec-0008-project-verification-backlog.md) | Верификация внешней совместимости | `draft` |
 | [SPEC-0009](spec-0009-kfk-code-placement.md) | Переразмещение логики объектов спецификаций КФК | `implemented` |
+| [SPEC-0010](spec-0010-codex-1c-routing.md) | Единая маршрутизация разработки 1С через Codex | `implemented` |
+| [SPEC-0011](spec-0011-code-index-bsl-ls-routing.md) | Постоянная маршрутизация Codex через EDT-MCP, code-index, BSL LS и v8std | `implemented` |
 
 Для новой спецификации скопируй [template](template.md).
