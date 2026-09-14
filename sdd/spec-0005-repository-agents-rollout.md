@@ -29,7 +29,7 @@ sources:
   - "repo:kafka-adapter-tests-reports:README.md"
   - "repo:kafka-adapter-tests-ui:README.md"
   - "repo:kafka-adapter-tests-unit:README.md"
-  - "repo:kafka-tools:readme.md"
+  - "repo:kafka-tools:README.md"
 ---
 
 # Инструкции для агентов остальных репозиториев экосистемы
