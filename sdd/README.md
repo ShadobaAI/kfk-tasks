@@ -60,7 +60,7 @@ non-terminal -> superseded
 | [SPEC-0009](spec-0009-kfk-code-placement.md) | Переразмещение логики объектов спецификаций КФК | `implemented` |
 | [SPEC-0010](spec-0010-codex-1c-routing.md) | Единая маршрутизация разработки 1С через Codex | `implemented` |
 | [SPEC-0011](spec-0011-code-index-bsl-ls-routing.md) | Постоянная маршрутизация Codex через EDT-MCP, code-index, BSL LS и v8std | `implemented` |
-| [SPEC-0012](spec-0012-codex-context-quality-and-cost.md) | Git-backed context plane, deterministic policy enforcement и task orchestration для Codex | `in-progress` |
+| [SPEC-0012](spec-0012-codex-context-quality-and-cost.md) | Git-backed context plane, deterministic policy enforcement и task orchestration для Codex | `implemented` |
 | [SPEC-0013](spec-0013-asyncapi-xsd-generator.md) | Переработка генератора AsyncAPI YAML → XSD | `implemented` |
 
 Для новой спецификации скопируй [template](template.md).

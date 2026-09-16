@@ -2,10 +2,10 @@
 title: Git-backed context plane, deterministic policy enforcement и task orchestration для Codex
 id: SPEC-0012
 type: specification
-status: in-progress
+status: implemented
 owner:
 created: 2026-09-12
-updated: 2026-09-15
+updated: 2026-09-16
 github_issue:
 affected_repositories:
   - kafka-tools
@@ -1373,6 +1373,44 @@ quality/cost benchmark. Пользовательская production-конфиг
 - Eager hooks устанавливаются по отдельному `hookRepositories` contract во все
   девять Kafka-owned repositories. Upstream checkout `tests/unit/yaxunit` явно
   исключён и не получает managed Kafka hooks.
+
+## Закрытие задачи, 2026-09-16
+
+Работа над SPEC-0012 завершена и задача закрыта по прямому указанию пользователя.
+Итоговый статус — `implemented`; полная независимая приёмка всех критериев
+`verified` не заявляется. Исторические записи выше о незавершённой работе описывают
+состояние на момент соответствующих этапов и заменены этим итогом.
+
+- Реализация и документация toolkit зафиксированы в `kafka-tools`, commit `05c0c08`.
+  SDD, ADR и материалы задачи зафиксированы в `kfk-tasks`, commit `77b7805`.
+- Поставлены deterministic policy selector/compliance, read-only MCP, doctor,
+  bounded stdio client, thin skills, reviewer и task orchestration, Git-backed
+  OpenViking context, reconciliation hooks и интеграция installer.
+- Итоговый runtime — Docker-only с latest-stable OpenViking и локальным либо
+  внешним Ollama. Docker-дополнение заменяет историческую Windows wheel/venv
+  схему. Решения сохранены в ADR-0005, ADR-0006 и ADR-0007.
+- По результатам, записанным в
+  [Docker-дополнении](spec-0012-docker-runtime-addendum.md), live bootstrap,
+  tenant provisioning, initial ingestion 94 записей из 9 репозиториев,
+  incremental reconciliation без изменений и непустой `find` прошли успешно.
+  Прежний `fetch failed` из временного handoff больше не описывает итог этого этапа.
+- Ранее зафиксированы focused tests policy, installer, doctor, Git hooks и
+  two-checkout E2E. При подготовке коммитов в текущей сессии manifest test и
+  staged `git diff --check` обоих репозиториев прошли. Повторный doctor test
+  завершился assertion для `adapter/adapter` (`undefined` вместо `repository`);
+  Docker, sync, MCP и installer smoke не завершились из-за `spawn EPERM`.
+  Эти результаты не заменяют ранее записанную live-проверку и не доказывают её
+  повторение в текущей среде.
+- Сохраняются ограничения проверки: полный installer со всеми компонентами,
+  EDT readiness/detector/compliance, полнота v8std и остальных mixed-strength
+  rules, BSL LS, actual Codex discovery, rendered schemas/token telemetry,
+  live automatic update/restart/rebuild и завершение всех descendants зависшего
+  launcher не подтверждены в полном объёме. EDT был исключён пользователем
+  из выполненного workstream. Закрытие задачи не снимает runtime readiness gates.
+
+Временный `work/SPEC-0012.md` удалён после переноса итогов в SDD. Его история
+сохранена в Git. Продолжение проверки или изменение реализации требует отдельной
+задачи; активных действий в рамках SPEC-0012 больше нет.
 
 ## Отклонения от спецификации
 

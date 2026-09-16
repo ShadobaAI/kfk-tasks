@@ -2,7 +2,7 @@
 title: Docker Compose для OpenViking и Ollama
 type: specification-addendum
 parent: SPEC-0012
-status: in-progress
+status: implemented
 created: 2026-09-16
 affected_repositories:
   - kafka-tools
@@ -18,7 +18,9 @@ venv launchers и предупреждением зависимости о Pytho
 OpenViking и локальные модели Ollama в Linux containers под Docker Desktop.
 Сохранить существующие Git-backed sources, read-only MCP и readiness gates.
 
-Дополнение утверждено пользователем 2026-09-16. Реализация начата.
+Дополнение утверждено пользователем 2026-09-16. Реализация завершена; задача
+закрыта по указанию пользователя 2026-09-16. Итоги и ограничения проверки
+сохранены ниже и в разделе закрытия основной SPEC-0012.
 
 ## Границы и решения
 
