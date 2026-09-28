@@ -43,24 +43,19 @@ non-terminal -> superseded
 - `Non-goals` ограничивают scope.
 - Acceptance criteria должны быть наблюдаемыми.
 - После реализации записывается actual result, а не планируемый.
+- После реализации обязательно актуализируется документация репозитория-владельца для изменившегося поведения, контракта или инструкции; запись результата в SDD её не заменяет.
 - Durable architecture decisions связываются с ADR из [`../adr`](../adr/README.md).
+- Текущее устройство и инструкции поддерживаются в документации репозитория-владельца; SDD сохраняет историю задачи.
 
 ## Индекс
 
+Нумерация начинается заново с оставленных записей; с этого момента их ID остаются стабильными.
+
 | ID | Спецификация | Статус |
 |---|---|---|
-| [SPEC-0001](spec-0001-memory-bank-foundation.md) | Project Memory Bank and SDD Foundation | `verified` |
-| [SPEC-0002](spec-0002-simple-kafka-adapter-1-9-2.md) | Upgrade Simple-Kafka_Adapter to 1.9.2+ | `verified` |
-| [SPEC-0003](spec-0003-bsl-sonarqube-remediation.md) | Устранение проблем BSL по результатам SonarQube | `draft` |
-| [SPEC-0004](spec-0004-adapter-agents-pilot.md) | Пилотные инструкции для агентов kafka-adapter | `verified` |
-| [SPEC-0005](spec-0005-repository-agents-rollout.md) | Инструкции остальных репозиториев | `verified` |
-| [SPEC-0006](spec-0006-workspace-agents.md) | Общие инструкции мультирепозитория | `verified` |
-| [SPEC-0007](spec-0007-memory-bank-retirement.md) | Вывод Memory Bank из эксплуатации | `verified` |
-| [SPEC-0008](spec-0008-project-verification-backlog.md) | Верификация внешней совместимости | `draft` |
-| [SPEC-0009](spec-0009-kfk-code-placement.md) | Переразмещение логики объектов спецификаций КФК | `implemented` |
-| [SPEC-0010](spec-0010-codex-1c-routing.md) | Единая маршрутизация разработки 1С через Codex | `implemented` |
-| [SPEC-0011](spec-0011-code-index-bsl-ls-routing.md) | Постоянная маршрутизация Codex через EDT-MCP, code-index, BSL LS и v8std | `implemented` |
-| [SPEC-0012](spec-0012-codex-context-quality-and-cost.md) | Git-backed context plane, deterministic policy enforcement и task orchestration для Codex | `implemented` |
-| [SPEC-0013](spec-0013-asyncapi-xsd-generator.md) | Переработка генератора AsyncAPI YAML → XSD | `implemented` |
+| [SPEC-0001](spec-0001-simple-kafka-adapter-1-9-2.md) | Upgrade Simple-Kafka_Adapter to 1.9.2+ | `verified` |
+| [SPEC-0002](spec-0002-kfk-code-placement.md) | Переразмещение логики объектов спецификаций КФК | `implemented` |
+
+Для SPEC-0001 статус `verified` учитывает принятое владельцем освобождение от runtime-проверок 1С и Kafka; объём непроведённых проверок указан в самой спецификации.
 
 Для новой спецификации скопируй [template](template.md).

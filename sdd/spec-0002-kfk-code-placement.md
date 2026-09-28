@@ -1,6 +1,6 @@
 ---
 title: Переразмещение логики объектов спецификаций КФК
-id: SPEC-0009
+id: SPEC-0002
 type: specification
 status: implemented
 owner:

@@ -12,3 +12,4 @@ This repository owns task tracking, SDD specifications, and architecture decisio
 - Changes to product documentation or source require explicit multi-repository scope in an approved SDD.
 - Keep only bounded, active task handoffs under `work/`: one file per Issue or approved SDD workstream. A handoff records committed revisions, completed work, decisions, remaining actions, and verification gaps; it is not a general-purpose Memory Bank.
 - At completion, promote durable conclusions into the SDD, ADR, or owning repository documentation and remove the active handoff. Git history supplies the audit trail.
+- After implementation, update the owning repository documentation for any changed current behavior, contract, or instruction in addition to recording the SDD result.

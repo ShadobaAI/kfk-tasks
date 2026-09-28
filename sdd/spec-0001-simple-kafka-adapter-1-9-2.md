@@ -1,6 +1,6 @@
 ---
 title: Upgrade Simple-Kafka_Adapter to 1.9.2+
-id: SPEC-0002
+id: SPEC-0001
 type: specification
 status: verified
 owner: null
@@ -291,6 +291,5 @@ Accepted verification waiver:
 
 - [Public API](../../adapter/adapter/docs/user/development/api.md)
 - [Kafka adapter repositories and testing](../../adapter/adapter/docs/project/repositories.md)
-- [SDD lifecycle](README.md)
 - [GitHub Issue #52](https://github.com/ShadobaAI/kfk-tasks/issues/52)
 - [Simple-Kafka_Adapter v1.9.2](https://github.com/NuclearAPK/Simple-Kafka_Adapter/releases/tag/v1.9.2)
