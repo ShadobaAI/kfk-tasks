@@ -55,6 +55,7 @@ non-terminal -> superseded
 |---|---|---|
 | [SPEC-0001](spec-0001-simple-kafka-adapter-1-9-2.md) | Upgrade Simple-Kafka_Adapter to 1.9.2+ | `verified` |
 | [SPEC-0002](spec-0002-kfk-code-placement.md) | Переразмещение логики объектов спецификаций КФК | `implemented` |
+| [SPEC-0003](spec-0003-combined-exchange-markers.md) | Комбинированные метки обмена и устойчивые указатели | `approved` |
 
 Для SPEC-0001 статус `verified` учитывает принятое владельцем освобождение от runtime-проверок 1С и Kafka; объём непроведённых проверок указан в самой спецификации.
 

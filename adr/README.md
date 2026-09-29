@@ -17,6 +17,8 @@ An accepted ADR is not silently rewritten when the decision changes. Create a ne
 
 ## Index
 
-Новых ADR пока нет. Следующий ID — `ADR-0001`.
+| ID | Решение | Статус |
+|---|---|---|
+| [ADR-0001](adr-0001-combined-exchange-markers.md) | Составная числовая метка и обработка равных меток | `accepted` |
 
 For a new decision, copy [the template](template.md).
